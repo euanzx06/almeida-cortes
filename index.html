@@ -82,7 +82,34 @@ const reservationsList = document.getElementById('reservationsList');
 const bookBtn = document.getElementById('bookBtn');
 
 let selectedTime = null;
-let reservations = JSON.parse(localStorage.getItem('barbearia_reservas') || '[]');
+let reservations = [];
+
+// SUPABASE: replace these two values with your project URL and anon key.
+const SUPABASE_URL = 'COLE_AQUI_A_URL_DO_SEU_SUPABASE';
+const SUPABASE_ANON_KEY = 'COLE_AQUI_A_CHAVE_ANON_DO_SEU_SUPABASE';
+
+async function supabaseRequest(path, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    }
+  });
+  if (!response.ok) throw new Error(await response.text());
+  if (response.status === 204) return null;
+  return response.json();
+}
+
+async function loadReservations() {
+  reservations = await supabaseRequest(
+    'reservations?select=id,name,phone,time&order=time.asc'
+  );
+  renderSchedule();
+  renderReservations();
+}
 
 function generateTimes(){
   const times=[];
@@ -146,22 +173,28 @@ function renderReservations(){
   });
 }
 
-function cancelReservation(index){
+async function cancelReservation(index){
   const sorted=[...reservations].sort((a,b)=>a.time.localeCompare(b.time));
   const item=sorted[index];
-  reservations=reservations.filter(r=>!(r.time===item.time && r.name===item.name && r.phone===item.phone));
-  localStorage.setItem('barbearia_reservas',JSON.stringify(reservations));
-  selectedTime=null;
-  renderSchedule();
-  renderReservations();
-  showStatus('Agendamento cancelado.');
+
+  try {
+    await supabaseRequest(`reservations?id=eq.${encodeURIComponent(item.id)}`, {
+      method: 'DELETE'
+    });
+    selectedTime=null;
+    await loadReservations();
+    showStatus('Agendamento cancelado.');
+  } catch (error) {
+    console.error(error);
+    showStatus('Não foi possível cancelar o agendamento.', true);
+  }
 }
 
 function escapeHtml(text){
   return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
 }
 
-bookBtn.onclick=()=>{
+bookBtn.onclick=async()=>{
   const name=nameInput.value.trim();
   const phone=phoneInput.value.trim();
 
@@ -177,19 +210,42 @@ bookBtn.onclick=()=>{
 
   if(reservations.some(r=>r.time===selectedTime)){
     showStatus('Esse horário já foi reservado.',true);
-    renderSchedule();
+    await loadReservations();
     return;
   }
 
-  reservations.push({name,phone,time:selectedTime});
-  localStorage.setItem('barbearia_reservas',JSON.stringify(reservations));
+  bookBtn.disabled=true;
 
-  showStatus(`Agendamento confirmado para ${selectedTime}!`);
-  nameInput.value='';
-  phoneInput.value='';
-  selectedTime=null;
-  renderSchedule();
-  renderReservations();
+  try {
+    await supabaseRequest('reservations', {
+      method: 'POST',
+      headers: { 'Prefer': 'return=minimal' },
+      body: JSON.stringify({ name, phone, time: selectedTime })
+    });
+
+    showStatus(`Agendamento confirmado para ${selectedTime}!`);
+    nameInput.value='';
+    phoneInput.value='';
+    selectedTime=null;
+    await loadReservations();
+  } catch (error) {
+    console.error(error);
+    if (String(error.message).includes('duplicate') ||
+        String(error.message).includes('23505')) {
+      showStatus('Esse horário acabou de ser reservado por outra pessoa.', true);
+      await loadReservations();
+    } else {
+      showStatus('Não foi possível salvar o agendamento. Verifique a configuração do Supabase.', true);
+    }
+  } finally {
+    bookBtn.disabled=false;
+  }
+};
+
+loadReservations().catch(error=>{
+  console.error(error);
+  showStatus('Não foi possível carregar os horários. Configure o Supabase no arquivo.', true);
+});
 };
 
 renderSchedule();
