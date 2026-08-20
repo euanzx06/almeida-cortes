@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Almeida Cortes</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#111;color:#fff}
+header{background:linear-gradient(135deg,#0b0b0b,#242424);padding:28px 20px;text-align:center;border-bottom:2px solid #c99b3b}
+header h1{margin:0;color:#d7ad52;font-size:32px}
+header p{margin:8px 0 0;color:#ccc}
+.container{max-width:1050px;margin:30px auto;padding:0 18px}
+.card{background:#1d1d1d;border:1px solid #333;border-radius:16px;padding:24px;box-shadow:0 10px 30px #0006}
+h2{margin-top:0;color:#d7ad52}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:25px}
+label{display:block;margin-bottom:7px;color:#ddd;font-weight:bold}
+input{width:100%;padding:13px;border-radius:9px;border:1px solid #555;background:#101010;color:#fff;font-size:16px}
+button{border:0;border-radius:9px;padding:13px 18px;background:#d7ad52;color:#111;font-weight:bold;cursor:pointer;font-size:16px}
+button:hover{filter:brightness(1.08)}
+.schedule{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.slot{padding:13px 8px;border-radius:10px;border:1px solid #444;background:#292929;color:#fff;cursor:pointer;text-align:center}
+.slot:hover{border-color:#d7ad52}
+.slot.selected{background:#d7ad52;color:#111;border-color:#d7ad52;font-weight:bold}
+.slot.booked{background:#6b2d2d;color:#aaa;border-color:#7d4444;cursor:not-allowed}
+.status{margin:15px 0;padding:12px;border-radius:9px;background:#262626;color:#ccc;display:none}
+.reservations{margin-top:30px}
+.reservation{display:flex;justify-content:space-between;align-items:center;gap:15px;background:#242424;padding:14px;border-radius:10px;margin-bottom:10px;border-left:4px solid #d7ad52}
+.reservation small{color:#aaa}
+.cancel{background:#9b3b3b;color:#fff;padding:8px 12px;font-size:13px}
+footer{text-align:center;padding:25px;color:#888}
+@media(max-width:700px){
+ .form{grid-template-columns:1fr}
+ .schedule{grid-template-columns:repeat(2,1fr)}
+ .reservation{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>✂️ Almeida Cortes</h1>
+  <p>Agende seu horário de forma rápida e fácil</p>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>Agende seu horário</h2>
+
+    <div class="form">
+      <div>
+        <label for="name">Nome do cliente</label>
+        <input id="name" type="text" placeholder="Digite seu nome">
+      </div>
+      <div>
+        <label for="phone">Telefone</label>
+        <input id="phone" type="tel" placeholder="(11) 99999-9999">
+      </div>
+    </div>
+
+    <label>Escolha o horário</label>
+    <div id="schedule" class="schedule"></div>
+
+    <div id="status" class="status"></div>
+
+    <button id="bookBtn" style="margin-top:18px;width:100%">Confirmar agendamento</button>
+
+    <div class="reservations">
+      <h2>Horários agendados</h2>
+      <div id="reservationsList"></div>
+    </div>
+  </div>
+</div>
+
+<footer>Almeida Cortes • Atendimento das 09:00 às 23:00</footer>
+
+<script>
+const schedule = document.getElementById('schedule');
+const nameInput = document.getElementById('name');
+const phoneInput = document.getElementById('phone');
+const statusBox = document.getElementById('status');
+const reservationsList = document.getElementById('reservationsList');
+const bookBtn = document.getElementById('bookBtn');
+
+let selectedTime = null;
+let reservations = JSON.parse(localStorage.getItem('barbearia_reservas') || '[]');
+
+function generateTimes(){
+  const times=[];
+  for(let minutes=9*60; minutes<=23*60; minutes+=30){
+    const h=String(Math.floor(minutes/60)).padStart(2,'0');
+    const m=String(minutes%60).padStart(2,'0');
+    times.push(`${h}:${m}`);
+  }
+  return times;
+}
+
+function renderSchedule(){
+  schedule.innerHTML='';
+  generateTimes().forEach(time=>{
+    const btn=document.createElement('button');
+    btn.className='slot';
+    btn.type='button';
+    btn.textContent=time;
+
+    const booked=reservations.some(r=>r.time===time);
+    if(booked){
+      btn.classList.add('booked');
+      btn.disabled=true;
+    }
+
+    btn.onclick=()=>{
+      document.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedTime=time;
+      showStatus(`Horário ${time} selecionado.`);
+    };
+
+    schedule.appendChild(btn);
+  });
+}
+
+function showStatus(text, error=false){
+  statusBox.style.display='block';
+  statusBox.textContent=text;
+  statusBox.style.color=error?'#ff9b9b':'#d7d7d7';
+}
+
+function renderReservations(){
+  reservationsList.innerHTML='';
+  if(!reservations.length){
+    reservationsList.innerHTML='<p style="color:#888">Nenhum horário agendado ainda.</p>';
+    return;
+  }
+
+  [...reservations].sort((a,b)=>a.time.localeCompare(b.time)).forEach((r,i)=>{
+    const div=document.createElement('div');
+    div.className='reservation';
+    div.innerHTML=`
+      <div>
+        <strong>${escapeHtml(r.time)} — ${escapeHtml(r.name)}</strong><br>
+        <small>Telefone: ${escapeHtml(r.phone)}</small>
+      </div>
+      <button class="cancel" onclick="cancelReservation(${i})">Cancelar</button>
+    `;
+    reservationsList.appendChild(div);
+  });
+}
+
+function cancelReservation(index){
+  const sorted=[...reservations].sort((a,b)=>a.time.localeCompare(b.time));
+  const item=sorted[index];
+  reservations=reservations.filter(r=>!(r.time===item.time && r.name===item.name && r.phone===item.phone));
+  localStorage.setItem('barbearia_reservas',JSON.stringify(reservations));
+  selectedTime=null;
+  renderSchedule();
+  renderReservations();
+  showStatus('Agendamento cancelado.');
+}
+
+function escapeHtml(text){
+  return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+}
+
+bookBtn.onclick=()=>{
+  const name=nameInput.value.trim();
+  const phone=phoneInput.value.trim();
+
+  if(!name || !phone){
+    showStatus('Preencha nome e telefone antes de confirmar.',true);
+    return;
+  }
+
+  if(!selectedTime){
+    showStatus('Escolha um horário disponível.',true);
+    return;
+  }
+
+  if(reservations.some(r=>r.time===selectedTime)){
+    showStatus('Esse horário já foi reservado.',true);
+    renderSchedule();
+    return;
+  }
+
+  reservations.push({name,phone,time:selectedTime});
+  localStorage.setItem('barbearia_reservas',JSON.stringify(reservations));
+
+  showStatus(`Agendamento confirmado para ${selectedTime}!`);
+  nameInput.value='';
+  phoneInput.value='';
+  selectedTime=null;
+  renderSchedule();
+  renderReservations();
+};
+
+renderSchedule();
+renderReservations();
+</script>
+</body>
+</html>
