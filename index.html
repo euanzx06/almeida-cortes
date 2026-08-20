@@ -4,252 +4,826 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Almeida Cortes</title>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#111;color:#fff}
-header{background:linear-gradient(135deg,#0b0b0b,#242424);padding:28px 20px;text-align:center;border-bottom:2px solid #c99b3b}
-header h1{margin:0;color:#d7ad52;font-size:32px}
-header p{margin:8px 0 0;color:#ccc}
-.container{max-width:1050px;margin:30px auto;padding:0 18px}
-.card{background:#1d1d1d;border:1px solid #333;border-radius:16px;padding:24px;box-shadow:0 10px 30px #0006}
-h2{margin-top:0;color:#d7ad52}
-.form{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:25px}
-label{display:block;margin-bottom:7px;color:#ddd;font-weight:bold}
-input{width:100%;padding:13px;border-radius:9px;border:1px solid #555;background:#101010;color:#fff;font-size:16px}
-button{border:0;border-radius:9px;padding:13px 18px;background:#d7ad52;color:#111;font-weight:bold;cursor:pointer;font-size:16px}
-button:hover{filter:brightness(1.08)}
-.schedule{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-.slot{padding:13px 8px;border-radius:10px;border:1px solid #444;background:#292929;color:#fff;cursor:pointer;text-align:center}
-.slot:hover{border-color:#d7ad52}
-.slot.selected{background:#d7ad52;color:#111;border-color:#d7ad52;font-weight:bold}
-.slot.booked{background:#6b2d2d;color:#aaa;border-color:#7d4444;cursor:not-allowed}
-.status{margin:15px 0;padding:12px;border-radius:9px;background:#262626;color:#ccc;display:none}
-.reservations{margin-top:30px}
-.reservation{display:flex;justify-content:space-between;align-items:center;gap:15px;background:#242424;padding:14px;border-radius:10px;margin-bottom:10px;border-left:4px solid #d7ad52}
-.reservation small{color:#aaa}
-.cancel{background:#9b3b3b;color:#fff;padding:8px 12px;font-size:13px}
-footer{text-align:center;padding:25px;color:#888}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#111;
+  color:#fff
+}
+
+header{
+  background:linear-gradient(135deg,#0b0b0b,#242424);
+  padding:28px 20px;
+  text-align:center;
+  border-bottom:2px solid #c99b3b
+}
+
+header h1{
+  margin:0;
+  color:#d7ad52;
+  font-size:32px
+}
+
+header p{
+  margin:8px 0 0;
+  color:#ccc
+}
+
+.container{
+  max-width:1050px;
+  margin:30px auto;
+  padding:0 18px
+}
+
+.card{
+  background:#1d1d1d;
+  border:1px solid #333;
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 10px 30px #0006
+}
+
+h2{
+  margin-top:0;
+  color:#d7ad52
+}
+
+.form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:25px
+}
+
+label{
+  display:block;
+  margin-bottom:7px;
+  color:#ddd;
+  font-weight:bold
+}
+
+input,
+select{
+  width:100%;
+  padding:13px;
+  border-radius:9px;
+  border:1px solid #555;
+  background:#101010;
+  color:#fff;
+  font-size:16px
+}
+
+button{
+  border:0;
+  border-radius:9px;
+  padding:13px 18px;
+  background:#d7ad52;
+  color:#111;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:16px
+}
+
+button:hover{
+  filter:brightness(1.08)
+}
+
+.schedule{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px
+}
+
+.slot{
+  padding:13px 8px;
+  border-radius:10px;
+  border:1px solid #444;
+  background:#292929;
+  color:#fff;
+  cursor:pointer;
+  text-align:center
+}
+
+.slot:hover{
+  border-color:#d7ad52
+}
+
+.slot.selected{
+  background:#d7ad52;
+  color:#111;
+  border-color:#d7ad52;
+  font-weight:bold
+}
+
+.slot.booked{
+  background:#6b2d2d;
+  color:#aaa;
+  border-color:#7d4444;
+  cursor:not-allowed
+}
+
+.status{
+  margin:15px 0;
+  padding:12px;
+  border-radius:9px;
+  background:#262626;
+  color:#ccc;
+  display:none
+}
+
+.info{
+  margin-top:25px;
+  padding:15px;
+  background:#242424;
+  border-radius:10px;
+  color:#bbb;
+  line-height:1.6
+}
+
+footer{
+  text-align:center;
+  padding:25px;
+  color:#888
+}
+
 @media(max-width:700px){
- .form{grid-template-columns:1fr}
- .schedule{grid-template-columns:repeat(2,1fr)}
- .reservation{flex-direction:column;align-items:flex-start}
+
+ .form{
+   grid-template-columns:1fr
+ }
+
+ .schedule{
+   grid-template-columns:repeat(2,1fr)
+ }
 }
 </style>
 </head>
+
 <body>
+
 <header>
   <h1>✂️ Almeida Cortes</h1>
   <p>Agende seu horário de forma rápida e fácil</p>
 </header>
 
+
 <div class="container">
+
   <div class="card">
+
     <h2>Agende seu horário</h2>
 
     <div class="form">
+
       <div>
         <label for="name">Nome do cliente</label>
-        <input id="name" type="text" placeholder="Digite seu nome">
+        <input
+          id="name"
+          type="text"
+          placeholder="Digite seu nome"
+          autocomplete="name">
       </div>
+
       <div>
         <label for="phone">Telefone</label>
-        <input id="phone" type="tel" placeholder="(11) 99999-9999">
+        <input
+          id="phone"
+          type="tel"
+          placeholder="(11) 99999-9999"
+          autocomplete="tel">
       </div>
+
+      <div>
+        <label for="service">Serviço</label>
+
+        <select id="service">
+
+          <option value="">
+            Selecione o serviço
+          </option>
+
+          <option value="Corte">
+            Corte
+          </option>
+
+          <option value="Barba">
+            Barba
+          </option>
+
+          <option value="Corte + Barba">
+            Corte + Barba
+          </option>
+
+        </select>
+      </div>
+
+      <div>
+        <label for="barber">Barbeiro</label>
+
+        <select id="barber">
+
+          <option value="Almeida">
+            Almeida
+          </option>
+
+        </select>
+      </div>
+
+      <div>
+        <label for="date">Data</label>
+
+        <input
+          id="date"
+          type="date">
+      </div>
+
     </div>
 
+
     <label>Escolha o horário</label>
+
     <div id="schedule" class="schedule"></div>
 
     <div id="status" class="status"></div>
 
-    <button id="bookBtn" style="margin-top:18px;width:100%">Confirmar agendamento</button>
+    <button
+      id="bookBtn"
+      style="margin-top:18px;width:100%">
+      Confirmar agendamento
+    </button>
 
-    <div class="reservations">
-      <h2>Horários agendados</h2>
-      <div id="reservationsList"></div>
+
+    <div class="info">
+
+      <strong>Funcionamento</strong><br>
+
+      Segunda a Domingo<br>
+      Das 09:00 às 23:00
+
+      <br><br>
+
+      Os horários em vermelho já estão reservados.
+
     </div>
+
   </div>
+
 </div>
 
-<footer>Almeida Cortes • Atendimento das 09:00 às 23:00</footer>
+
+<footer>
+  Almeida Cortes • Atendimento das 09:00 às 23:00
+</footer>
+
 
 <script>
-const schedule = document.getElementById('schedule');
-const nameInput = document.getElementById('name');
-const phoneInput = document.getElementById('phone');
-const statusBox = document.getElementById('status');
-const reservationsList = document.getElementById('reservationsList');
-const bookBtn = document.getElementById('bookBtn');
+
+/* =====================================================
+   CONFIGURAÇÃO DO SUPABASE
+   ===================================================== */
+
+const SUPABASE_URL =
+  'COLE_AQUI_A_URL_DO_SEU_SUPABASE';
+
+const SUPABASE_KEY =
+  'COLE_AQUI_SUA_PUBLISHABLE_KEY';
+
+
+/* =====================================================
+   ELEMENTOS DO SITE
+   ===================================================== */
+
+const schedule =
+  document.getElementById('schedule');
+
+const nameInput =
+  document.getElementById('name');
+
+const phoneInput =
+  document.getElementById('phone');
+
+const serviceInput =
+  document.getElementById('service');
+
+const barberInput =
+  document.getElementById('barber');
+
+const dateInput =
+  document.getElementById('date');
+
+const statusBox =
+  document.getElementById('status');
+
+const bookBtn =
+  document.getElementById('bookBtn');
+
 
 let selectedTime = null;
 let reservations = [];
 
-// SUPABASE: replace these two values with your project URL and anon key.
-const SUPABASE_URL = 'COLE_AQUI_A_URL_DO_SEU_SUPABASE';
-const SUPABASE_ANON_KEY = 'COLE_AQUI_A_CHAVE_ANON_DO_SEU_SUPABASE';
 
-async function supabaseRequest(path, options = {}) {
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...options,
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-      ...(options.headers || {})
-    }
-  });
-  if (!response.ok) throw new Error(await response.text());
-  if (response.status === 204) return null;
+/* =====================================================
+   DATA DE HOJE
+   ===================================================== */
+
+function getToday(){
+
+  const now = new Date();
+
+  const year =
+    now.getFullYear();
+
+  const month =
+    String(now.getMonth() + 1).padStart(2,'0');
+
+  const day =
+    String(now.getDate()).padStart(2,'0');
+
+  return `${year}-${month}-${day}`;
+}
+
+
+dateInput.value = getToday();
+dateInput.min = getToday();
+
+
+/* =====================================================
+   COMUNICAÇÃO COM SUPABASE
+   ===================================================== */
+
+async function supabaseRequest(path, options = {}){
+
+  if(
+    SUPABASE_URL.includes('COLE_AQUI') ||
+    SUPABASE_KEY.includes('COLE_AQUI')
+  ){
+
+    throw new Error(
+      'Supabase ainda não foi configurado.'
+    );
+  }
+
+
+  const response =
+    await fetch(
+      `${SUPABASE_URL}/rest/v1/${path}`,
+      {
+        ...options,
+
+        headers:{
+          'apikey':SUPABASE_KEY,
+
+          'Authorization':
+            `Bearer ${SUPABASE_KEY}`,
+
+          'Content-Type':
+            'application/json',
+
+          ...(options.headers || {})
+        }
+      }
+    );
+
+
+  if(!response.ok){
+
+    throw new Error(
+      await response.text()
+    );
+  }
+
+
+  if(response.status === 204){
+
+    return null;
+  }
+
+
   return response.json();
 }
 
-async function loadReservations() {
-  reservations = await supabaseRequest(
-    'reservations?select=id,name,phone,time&order=time.asc'
-  );
+
+/* =====================================================
+   CARREGAR RESERVAS DA DATA
+   ===================================================== */
+
+async function loadReservations(){
+
+  const date =
+    dateInput.value;
+
+  const barber =
+    barberInput.value;
+
+
+  reservations =
+    await supabaseRequest(
+      `reservations?select=id,reservation_date,reservation_time,barber&reservation_date=eq.${encodeURIComponent(date)}&barber=eq.${encodeURIComponent(barber)}&order=reservation_time.asc`
+    );
+
+
   renderSchedule();
-  renderReservations();
 }
 
+
+/* =====================================================
+   HORÁRIOS
+   ===================================================== */
+
 function generateTimes(){
-  const times=[];
-  for(let minutes=9*60; minutes<=23*60; minutes+=30){
-    const h=String(Math.floor(minutes/60)).padStart(2,'0');
-    const m=String(minutes%60).padStart(2,'0');
+
+  const times = [];
+
+  for(
+    let minutes = 9 * 60;
+    minutes <= 23 * 60;
+    minutes += 30
+  ){
+
+    const h =
+      String(
+        Math.floor(minutes / 60)
+      ).padStart(2,'0');
+
+    const m =
+      String(
+        minutes % 60
+      ).padStart(2,'0');
+
+
     times.push(`${h}:${m}`);
   }
+
   return times;
 }
 
-function renderSchedule(){
-  schedule.innerHTML='';
-  generateTimes().forEach(time=>{
-    const btn=document.createElement('button');
-    btn.className='slot';
-    btn.type='button';
-    btn.textContent=time;
 
-    const booked=reservations.some(r=>r.time===time);
+/* =====================================================
+   MOSTRAR HORÁRIOS
+   ===================================================== */
+
+function renderSchedule(){
+
+  schedule.innerHTML = '';
+
+  selectedTime = null;
+
+
+  generateTimes().forEach(time => {
+
+    const btn =
+      document.createElement('button');
+
+    btn.className = 'slot';
+
+    btn.type = 'button';
+
+    btn.textContent = time;
+
+
+    const booked =
+      reservations.some(
+        r =>
+          String(r.reservation_time)
+            .substring(0,5) === time
+      );
+
+
     if(booked){
+
       btn.classList.add('booked');
-      btn.disabled=true;
+
+      btn.disabled = true;
+
+      btn.textContent =
+        `${time} • Ocupado`;
     }
 
-    btn.onclick=()=>{
-      document.querySelectorAll('.slot').forEach(x=>x.classList.remove('selected'));
+
+    btn.onclick = () => {
+
+      document
+        .querySelectorAll('.slot')
+        .forEach(x =>
+          x.classList.remove('selected')
+        );
+
+
       btn.classList.add('selected');
-      selectedTime=time;
-      showStatus(`Horário ${time} selecionado.`);
+
+      selectedTime = time;
+
+
+      showStatus(
+        `Horário ${time} selecionado.`
+      );
     };
 
+
     schedule.appendChild(btn);
+
   });
 }
 
-function showStatus(text, error=false){
-  statusBox.style.display='block';
-  statusBox.textContent=text;
-  statusBox.style.color=error?'#ff9b9b':'#d7d7d7';
+
+/* =====================================================
+   MENSAGENS
+   ===================================================== */
+
+function showStatus(text,error=false){
+
+  statusBox.style.display =
+    'block';
+
+  statusBox.textContent =
+    text;
+
+  statusBox.style.color =
+    error
+      ? '#ff9b9b'
+      : '#d7d7d7';
 }
 
-function renderReservations(){
-  reservationsList.innerHTML='';
-  if(!reservations.length){
-    reservationsList.innerHTML='<p style="color:#888">Nenhum horário agendado ainda.</p>';
+
+/* =====================================================
+   ALTERAÇÃO DE DATA
+   ===================================================== */
+
+dateInput.addEventListener(
+  'change',
+  async () => {
+
+    selectedTime = null;
+
+    try{
+
+      await loadReservations();
+
+      showStatus(
+        'Escolha um horário disponível.'
+      );
+
+    }catch(error){
+
+      console.error(error);
+
+      showStatus(
+        'Não foi possível carregar os horários.',
+        true
+      );
+    }
+
+  }
+);
+
+
+/* =====================================================
+   ALTERAÇÃO DE BARBEIRO
+   ===================================================== */
+
+barberInput.addEventListener(
+  'change',
+  async () => {
+
+    selectedTime = null;
+
+    try{
+
+      await loadReservations();
+
+    }catch(error){
+
+      console.error(error);
+
+      showStatus(
+        'Não foi possível carregar os horários.',
+        true
+      );
+    }
+
+  }
+);
+
+
+/* =====================================================
+   CONFIRMAR AGENDAMENTO
+   ===================================================== */
+
+bookBtn.onclick = async () => {
+
+  const name =
+    nameInput.value.trim();
+
+  const phone =
+    phoneInput.value.trim();
+
+  const service =
+    serviceInput.value;
+
+  const barber =
+    barberInput.value;
+
+  const date =
+    dateInput.value;
+
+
+  /* VALIDAÇÕES */
+
+  if(!name){
+
+    showStatus(
+      'Digite o nome do cliente.',
+      true
+    );
+
     return;
   }
 
-  [...reservations].sort((a,b)=>a.time.localeCompare(b.time)).forEach((r,i)=>{
-    const div=document.createElement('div');
-    div.className='reservation';
-    div.innerHTML=`
-      <div>
-        <strong>${escapeHtml(r.time)} — ${escapeHtml(r.name)}</strong><br>
-        <small>Telefone: ${escapeHtml(r.phone)}</small>
-      </div>
-      <button class="cancel" onclick="cancelReservation(${i})">Cancelar</button>
-    `;
-    reservationsList.appendChild(div);
-  });
-}
 
-async function cancelReservation(index){
-  const sorted=[...reservations].sort((a,b)=>a.time.localeCompare(b.time));
-  const item=sorted[index];
+  if(!phone){
 
-  try {
-    await supabaseRequest(`reservations?id=eq.${encodeURIComponent(item.id)}`, {
-      method: 'DELETE'
-    });
-    selectedTime=null;
-    await loadReservations();
-    showStatus('Agendamento cancelado.');
-  } catch (error) {
-    console.error(error);
-    showStatus('Não foi possível cancelar o agendamento.', true);
-  }
-}
+    showStatus(
+      'Digite o telefone.',
+      true
+    );
 
-function escapeHtml(text){
-  return String(text).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-}
-
-bookBtn.onclick=async()=>{
-  const name=nameInput.value.trim();
-  const phone=phoneInput.value.trim();
-
-  if(!name || !phone){
-    showStatus('Preencha nome e telefone antes de confirmar.',true);
     return;
   }
+
+
+  if(!service){
+
+    showStatus(
+      'Selecione um serviço.',
+      true
+    );
+
+    return;
+  }
+
+
+  if(!date){
+
+    showStatus(
+      'Selecione uma data.',
+      true
+    );
+
+    return;
+  }
+
 
   if(!selectedTime){
-    showStatus('Escolha um horário disponível.',true);
+
+    showStatus(
+      'Escolha um horário disponível.',
+      true
+    );
+
     return;
   }
 
-  if(reservations.some(r=>r.time===selectedTime)){
-    showStatus('Esse horário já foi reservado.',true);
+
+  /* VERIFICAÇÃO LOCAL */
+
+  const alreadyBooked =
+    reservations.some(
+      r =>
+        String(r.reservation_time)
+          .substring(0,5)
+        === selectedTime
+    );
+
+
+  if(alreadyBooked){
+
+    showStatus(
+      'Esse horário já foi reservado.',
+      true
+    );
+
     await loadReservations();
+
     return;
   }
 
-  bookBtn.disabled=true;
 
-  try {
-    await supabaseRequest('reservations', {
-      method: 'POST',
-      headers: { 'Prefer': 'return=minimal' },
-      body: JSON.stringify({ name, phone, time: selectedTime })
-    });
+  bookBtn.disabled = true;
 
-    showStatus(`Agendamento confirmado para ${selectedTime}!`);
-    nameInput.value='';
-    phoneInput.value='';
-    selectedTime=null;
+  bookBtn.textContent =
+    'Salvando...';
+
+
+  try{
+
+    await supabaseRequest(
+      'reservations',
+      {
+        method:'POST',
+
+        headers:{
+          'Prefer':
+            'return=minimal'
+        },
+
+        body:JSON.stringify({
+
+          name:name,
+
+          phone:phone,
+
+          service:service,
+
+          barber:barber,
+
+          reservation_date:date,
+
+          reservation_time:
+            selectedTime
+
+        })
+      }
+    );
+
+
+    showStatus(
+      `Agendamento confirmado para ${selectedTime}!`
+    );
+
+
+    nameInput.value = '';
+
+    phoneInput.value = '';
+
+    serviceInput.value = '';
+
+    selectedTime = null;
+
+
     await loadReservations();
-  } catch (error) {
+
+
+  }catch(error){
+
     console.error(error);
-    if (String(error.message).includes('duplicate') ||
-        String(error.message).includes('23505')) {
-      showStatus('Esse horário acabou de ser reservado por outra pessoa.', true);
+
+    const message =
+      String(error.message);
+
+
+    if(
+      message.includes('duplicate') ||
+      message.includes('23505')
+    ){
+
+      showStatus(
+        'Esse horário acabou de ser reservado por outra pessoa.',
+        true
+      );
+
       await loadReservations();
-    } else {
-      showStatus('Não foi possível salvar o agendamento. Verifique a configuração do Supabase.', true);
+
+    }else{
+
+      showStatus(
+        'Não foi possível salvar o agendamento. Verifique a configuração do Supabase.',
+        true
+      );
     }
-  } finally {
-    bookBtn.disabled=false;
+
+
+  }finally{
+
+    bookBtn.disabled = false;
+
+    bookBtn.textContent =
+      'Confirmar agendamento';
   }
+
 };
 
-loadReservations().catch(error=>{
-  console.error(error);
-  showStatus('Não foi possível carregar os horários. Configure o Supabase no arquivo.', true);
-});
-};
 
-renderSchedule();
-renderReservations();
+/* =====================================================
+   INICIALIZAÇÃO
+   ===================================================== */
+
+loadReservations()
+  .catch(error => {
+
+    console.error(error);
+
+    showStatus(
+      'Não foi possível carregar os horários. Configure o Supabase no arquivo.',
+      true
+    );
+
+  });
+
 </script>
+
 </body>
 </html>
