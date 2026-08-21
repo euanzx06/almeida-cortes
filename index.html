@@ -764,10 +764,11 @@ bookBtn.onclick = async () => {
       {
         method:'POST',
 
-        headers:{
-          'Prefer':
-            'return=minimal'
-        },
+       headers:{
+  'Prefer':
+    'return=representation'
+      
+       },
 
         body:JSON.stringify({
 
