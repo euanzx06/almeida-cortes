@@ -1,45 +1,931 @@
-async function supabaseRequest(path, options = {}) {
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-  if (
-    SUPABASE_URL.includes('COLE_AQUI') ||
-    SUPABASE_KEY.includes('COLE_AQUI')
-  ) {
-    throw new Error('Supabase ainda não foi configurado.');
-  }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  const response = await fetch(
-    `${SUPABASE_URL}/rest/v1/${path}`,
-    {
-      ...options,
+<title>Almeida Cortes - Agendamento</title>
 
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type': 'application/json',
-        ...(options.headers || {})
-      }
-    }
-  );
+<style>
 
-  const text = await response.text();
-
-  if (!response.ok) {
-    throw new Error(
-      text || `Erro HTTP ${response.status}`
-    );
-  }
-
-  if (!text.trim()) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
+*{
+  box-sizing:border-box;
 }
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#111;
+  color:#fff;
+}
+
+header{
+  background:linear-gradient(135deg,#0b0b0b,#242424);
+  padding:28px 20px;
+  text-align:center;
+  border-bottom:2px solid #c99b3b;
+}
+
+header h1{
+  margin:0;
+  color:#d7ad52;
+  font-size:32px;
+}
+
+header p{
+  margin:8px 0 0;
+  color:#ccc;
+}
+
+.container{
+  max-width:1050px;
+  margin:30px auto;
+  padding:0 18px;
+}
+
+.card{
+  background:#1d1d1d;
+  border:1px solid #333;
+  border-radius:16px;
+  padding:24px;
+  box-shadow:0 10px 30px #0006;
+}
+
+h2{
+  margin-top:0;
+  color:#d7ad52;
+}
+
+.form{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+  margin-bottom:25px;
+}
+
+label{
+  display:block;
+  margin-bottom:7px;
+  color:#ddd;
+  font-weight:bold;
+}
+
+input,
+select{
+  width:100%;
+  padding:13px;
+  border-radius:9px;
+  border:1px solid #555;
+  background:#101010;
+  color:#fff;
+  font-size:16px;
+}
+
+button{
+  border:0;
+  border-radius:9px;
+  padding:13px 18px;
+  background:#d7ad52;
+  color:#111;
+  font-weight:bold;
+  cursor:pointer;
+  font-size:16px;
+}
+
+button:hover{
+  filter:brightness(1.08);
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.schedule{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+
+.slot{
+  padding:13px 8px;
+  border-radius:10px;
+  border:1px solid #444;
+  background:#292929;
+  color:#fff;
+}
+
+.slot:hover:not(:disabled){
+  border-color:#d7ad52;
+}
+
+.slot.selected{
+  background:#d7ad52;
+  color:#111;
+  border-color:#d7ad52;
+}
+
+.slot.booked{
+  background:#6b2d2d;
+  color:#aaa;
+  border-color:#7d4444;
+}
+
+.status{
+  margin:15px 0;
+  padding:12px;
+  border-radius:9px;
+  background:#262626;
+  display:none;
+}
+
+.success{
+  color:#8fe3a1;
+}
+
+.error{
+  color:#ff9b9b;
+}
+
+.info{
+  margin-top:25px;
+  padding:15px;
+  background:#242424;
+  border-radius:10px;
+  color:#bbb;
+  line-height:1.6;
+}
+
+footer{
+  text-align:center;
+  padding:25px;
+  color:#888;
+}
+
+@media(max-width:700px){
+
+  .form{
+    grid-template-columns:1fr;
+  }
+
+  .schedule{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+}
+
+</style>
+
+</head>
+
+
+<body>
+
+<header>
+
+<h1>✂️ Almeida Cortes</h1>
+
+<p>
+Agende seu horário de forma rápida e fácil
+</p>
+
+</header>
+
+
+<div class="container">
+
+<div class="card">
+
+<h2>Agende seu horário</h2>
+
+
+<div class="form">
+
+
+<div>
+
+<label for="name">
+Nome do cliente
+</label>
+
+<input
+id="name"
+type="text"
+placeholder="Digite seu nome"
+autocomplete="name"
+>
+
+</div>
+
+
+<div>
+
+<label for="phone">
+Telefone
+</label>
+
+<input
+id="phone"
+type="tel"
+placeholder="(11) 99999-9999"
+autocomplete="tel"
+>
+
+</div>
+
+
+<div>
+
+<label for="service">
+Serviço
+</label>
+
+<select id="service">
+
+<option value="">
+Selecione o serviço
+</option>
+
+<option value="Corte">
+Corte
+</option>
+
+<option value="Barba">
+Barba
+</option>
+
+<option value="Corte + Barba">
+Corte + Barba
+</option>
+
+</select>
+
+</div>
+
+
+<div>
+
+<label for="barber">
+Barbeiro
+</label>
+
+<select id="barber">
+
+<option value="Almeida">
+Almeida
+</option>
+
+</select>
+
+</div>
+
+
+<div>
+
+<label for="date">
+Data
+</label>
+
+<input
+id="date"
+type="date"
+>
+
+</div>
+
+
+</div>
+
+
+<label>
+Escolha o horário
+</label>
+
+<div
+id="schedule"
+class="schedule"
+></div>
+
+
+<div
+id="status"
+class="status"
+></div>
+
+
+<button
+id="bookBtn"
+type="button"
+style="margin-top:18px;width:100%"
+>
+Confirmar agendamento
+</button>
+
+
+<div class="info">
+
+<strong>
+Atendimento
+</strong>
+
+<br>
+
+Das 09:00 às 23:00
+
+<br><br>
+
+Os horários em vermelho já estão ocupados.
+
+</div>
+
+
+</div>
+
+</div>
+
+
+<footer>
+
+Almeida Cortes • Atendimento das 09:00 às 23:00
+
+</footer>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE
+   ===================================================== */
+
+const SUPABASE_URL =
+'https://viqrgaeirmmvyicztido.supabase.co';
+
+const SUPABASE_KEY =
+'sb_publishable_o5D1Vr1dmYnbpHoeM3epEg_qr9gGjlC';
+
+
+/* =====================================================
+   ELEMENTOS
+   ===================================================== */
+
+const schedule =
+document.getElementById('schedule');
+
+const nameInput =
+document.getElementById('name');
+
+const phoneInput =
+document.getElementById('phone');
+
+const serviceInput =
+document.getElementById('service');
+
+const barberInput =
+document.getElementById('barber');
+
+const dateInput =
+document.getElementById('date');
+
+const statusBox =
+document.getElementById('status');
+
+const bookBtn =
+document.getElementById('bookBtn');
+
+
+let reservations = [];
+
+let selectedTime = null;
+
+
+/* =====================================================
+   DATA
+   ===================================================== */
+
+function getToday(){
+
+const now = new Date();
+
+const year =
+now.getFullYear();
+
+const month =
+String(now.getMonth()+1)
+.padStart(2,'0');
+
+const day =
+String(now.getDate())
+.padStart(2,'0');
+
+return `${year}-${month}-${day}`;
+
+}
+
+
+dateInput.min =
+getToday();
+
+dateInput.value =
+getToday();
+
+
+/* =====================================================
+   SUPABASE REQUEST
+   ===================================================== */
+
+async function supabaseRequest(
+path,
+options = {}
+){
+
+const response =
+await fetch(
+`${SUPABASE_URL}/rest/v1/${path}`,
+{
+
+...options,
+
+headers:{
+
+'apikey':
+SUPABASE_KEY,
+
+'Authorization':
+`Bearer ${SUPABASE_KEY}`,
+
+'Content-Type':
+'application/json',
+
+...(options.headers || {})
+
+}
+
+}
+);
+
+
+const text =
+await response.text();
+
+
+if(!response.ok){
+
+throw new Error(
+text ||
+`HTTP ${response.status}`
+);
+
+}
+
+
+if(!text.trim()){
+
+return null;
+
+}
+
+
+try{
+
+return JSON.parse(text);
+
+}
+catch{
+
+return text;
+
+}
+
+}
+
+
+/* =====================================================
+   STATUS
+   ===================================================== */
+
+function showStatus(
+message,
+error=false
+){
+
+statusBox.style.display =
+'block';
+
+statusBox.textContent =
+message;
+
+statusBox.className =
+error
+? 'status error'
+: 'status success';
+
+}
+
+
+/* =====================================================
+   HORÁRIOS
+   ===================================================== */
+
+function generateTimes(){
+
+const times=[];
+
+for(
+let minutes=9*60;
+minutes<=23*60;
+minutes+=30
+){
+
+const h =
+String(
+Math.floor(minutes/60)
+).padStart(2,'0');
+
+const m =
+String(
+minutes%60
+).padStart(2,'0');
+
+times.push(
+`${h}:${m}`
+);
+
+}
+
+return times;
+
+}
+
+
+/* =====================================================
+   CARREGAR RESERVAS
+   ===================================================== */
+
+async function loadReservations(){
+
+const date =
+dateInput.value;
+
+const barber =
+barberInput.value;
+
+
+try{
+
+reservations =
+await supabaseRequest(
+'reservations' +
+'?select=id,reservation_date,reservation_time,barber' +
+'&reservation_date=eq.' +
+encodeURIComponent(date) +
+'&barber=eq.' +
+encodeURIComponent(barber) +
+'&order=reservation_time.asc'
+);
+
+
+renderSchedule();
+
+}
+catch(error){
+
+console.error(
+'Erro ao carregar reservas:',
+error
+);
+
+schedule.innerHTML =
+'<p style="color:#ff9b9b">Erro ao carregar horários.</p>';
+
+showStatus(
+'Não foi possível carregar os horários.',
+true
+);
+
+}
+
+}
+
+
+/* =====================================================
+   MOSTRAR HORÁRIOS
+   ===================================================== */
+
+function renderSchedule(){
+
+schedule.innerHTML='';
+
+selectedTime=null;
+
+
+generateTimes()
+.forEach(time=>{
+
+const button =
+document.createElement('button');
+
+button.type='button';
+
+button.className='slot';
+
+button.textContent=time;
+
+
+const occupied =
+reservations.some(
+reservation=>{
+
+const reserved =
+String(
+reservation.reservation_time
+)
+.substring(0,5);
+
+return reserved===time;
+
+}
+);
+
+
+if(occupied){
+
+button.disabled=true;
+
+button.classList.add(
+'booked'
+);
+
+button.textContent =
+`${time} • Ocupado`;
+
+}
+
+
+button.addEventListener(
+'click',
+()=>{
+
+document
+.querySelectorAll('.slot')
+.forEach(
+slot=>
+slot.classList.remove(
+'selected'
+)
+);
+
+
+button.classList.add(
+'selected'
+);
+
+selectedTime =
+time;
+
+
+showStatus(
+`Horário ${time} selecionado.`
+);
+
+}
+);
+
+
+schedule.appendChild(
+button
+);
+
+});
+
+}
+
+
+/* =====================================================
+   DATA ALTERADA
+   ===================================================== */
+
+dateInput.addEventListener(
+'change',
+()=>{
+
+loadReservations();
+
+}
+);
+
+
+/* =====================================================
+   BARBEIRO ALTERADO
+   ===================================================== */
+
+barberInput.addEventListener(
+'change',
+()=>{
+
+loadReservations();
+
+}
+);
+
+
+/* =====================================================
+   AGENDAR
+   ===================================================== */
+
+bookBtn.addEventListener(
+'click',
+async()=>{
+
+const name =
+nameInput.value.trim();
+
+const phone =
+phoneInput.value.trim();
+
+const service =
+serviceInput.value;
+
+const barber =
+barberInput.value;
+
+const date =
+dateInput.value;
+
+
+if(!name){
+
+showStatus(
+'Digite o nome do cliente.',
+true
+);
+
+return;
+
+}
+
+
+if(!phone){
+
+showStatus(
+'Digite o telefone.',
+true
+);
+
+return;
+
+}
+
+
+if(!service){
+
+showStatus(
+'Selecione o serviço.',
+true
+);
+
+return;
+
+}
+
+
+if(!date){
+
+showStatus(
+'Selecione a data.',
+true
+);
+
+return;
+
+}
+
+
+if(!selectedTime){
+
+showStatus(
+'Escolha um horário.',
+true
+);
+
+return;
+
+}
+
+
+bookBtn.disabled=true;
+
+bookBtn.textContent=
+'Salvando...';
+
+
+try{
+
+await supabaseRequest(
+'reservations',
+{
+
+method:'POST',
+
+headers:{
+
+'Prefer':
+'return=minimal'
+
+},
+
+body:
+JSON.stringify({
+
+name:name,
+
+phone:phone,
+
+service:service,
+
+barber:barber,
+
+reservation_date:date,
+
+reservation_time:
+selectedTime
+
+})
+
+}
+
+);
+
+
+showStatus(
+`✅ Agendamento confirmado para ${selectedTime}!`
+);
+
+
+nameInput.value='';
+
+phoneInput.value='';
+
+serviceInput.value='';
+
+selectedTime=null;
+
+
+await loadReservations();
+
+
+}
+catch(error){
+
+console.error(
+'Erro ao salvar:',
+error
+);
+
+
+if(
+String(error.message)
+.includes('23505')
+){
+
+showStatus(
+'Esse horário acabou de ser reservado por outra pessoa.',
+true
+);
+
+}
+else{
+
+showStatus(
+'Não foi possível salvar o agendamento.',
+true
+);
+
+}
+
+}
+finally{
+
+bookBtn.disabled=false;
+
+bookBtn.textContent=
+'Confirmar agendamento';
+
+}
+
+}
+);
+
+
+/* =====================================================
+   INICIAR
+   ===================================================== */
+
+loadReservations();
+
 </script>
 
 </body>
+
 </html>
