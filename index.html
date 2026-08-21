@@ -358,14 +358,14 @@ dateInput.min = getToday();
 async function supabaseRequest(path, options = {}){
 
   if(
-    SUPABASE_URL.includes('https://viqrgaeirmmvyicztido.supabase.co') ||
-    SUPABASE_KEY.includes('sb_publishable_o5D1Vr1dmYnbpHoeM3epEg_qr9gGjlC')
-  ){
+  SUPABASE_URL.includes('https://viqrgaeirmmvyicztido.supabase.co') ||
+  SUPABASE_KEY.includes('sb_publishable_o5D1Vr1dmYnbpHoeM3epEg_qr9gGjlC')
+){
 
-    throw new Error(
-      'Supabase ainda não foi configurado.'
-    );
-  }
+  throw new Error(
+    'Supabase ainda não foi configurado.'
+  );
+}
 
 
   const response =
