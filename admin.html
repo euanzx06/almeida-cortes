@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Administração - Almeida Cortes</title>
+
+<style>
+*{
+  box-sizing:border-box;
+}
+
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:#111;
+  color:#fff;
+}
+
+header{
+  background:linear-gradient(135deg,#0b0b0b,#242424);
+  padding:25px 20px;
+  text-align:center;
+  border-bottom:2px solid #c99b3b;
+}
+
+header h1{
+  margin:0;
+  color:#d7ad52;
+}
+
+.container{
+  max-width:1100px;
+  margin:30px auto;
+  padding:0 18px;
+}
+
+.card{
+  background:#1d1d1d;
+  border:1px solid #333;
+  border-radius:16px;
+  padding:24px;
+  margin-bottom:20px;
+}
+
+input{
+  width:100%;
+  padding:13px;
+  margin:8px 0 15px;
+  border-radius:8px;
+  border:1px solid #555;
+  background:#101010;
+  color:#fff;
+  font-size:16px;
+}
+
+button{
+  border:0;
+  border-radius:8px;
+  padding:12px 18px;
+  background:#d7ad52;
+  color:#111;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+button:hover{
+  filter:brightness(1.08);
+}
+
+.logout{
+  background:#555;
+  color:#fff;
+}
+
+.cancel{
+  background:#9b3b3b;
+  color:#fff;
+}
+
+.status{
+  margin-top:15px;
+  padding:12px;
+  border-radius:8px;
+  display:none;
+}
+
+.success{
+  background:#173d24;
+  color:#9ee6ae;
+}
+
+.error{
+  background:#4a2020;
+  color:#ffaaaa;
+}
+
+.filters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+.reservation{
+  background:#242424;
+  border-left:4px solid #d7ad52;
+  border-radius:10px;
+  padding:15px;
+  margin-bottom:12px;
+
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:15px;
+}
+
+.reservation strong{
+  color:#d7ad52;
+}
+
+.small{
+  color:#aaa;
+  margin-top:5px;
+}
+
+.hidden{
+  display:none;
+}
+
+@media(max-width:700px){
+
+  .filters{
+    grid-template-columns:1fr;
+  }
+
+  .reservation{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>✂️ Almeida Cortes</h1>
+<p>Painel administrativo</p>
+</header>
+
+
+<div class="container">
+
+
+<!-- LOGIN -->
+
+<div id="loginCard" class="card">
+
+<h2>Login administrativo</h2>
+
+<label>Email</label>
+
+<input
+id="email"
+type="email"
+placeholder="Seu email"
+>
+
+
+<label>Senha</label>
+
+<input
+id="password"
+type="password"
+placeholder="Sua senha"
+>
+
+
+<button id="loginBtn">
+Entrar
+</button>
+
+
+<div id="loginStatus" class="status"></div>
+
+</div>
+
+
+<!-- PAINEL -->
+
+<div id="adminPanel" class="hidden">
+
+<div class="card">
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+">
+
+<h2>Agendamentos</h2>
+
+<button
+id="logoutBtn"
+class="logout"
+>
+Sair
+</button>
+
+</div>
+
+
+<div class="filters">
+
+<div>
+
+<label>Data</label>
+
+<input
+id="dateFilter"
+type="date"
+>
+
+</div>
+
+
+<div>
+
+<label>Barbeiro</label>
+
+<input
+id="barberFilter"
+type="text"
+value="Almeida"
+>
+
+</div>
+
+</div>
+
+
+<button id="refreshBtn">
+Atualizar
+</button>
+
+
+<div
+id="adminStatus"
+class="status"
+></div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Reservas</h2>
+
+<div id="reservationsList"></div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+   SUPABASE
+   ===================================================== */
+
+const SUPABASE_URL =
+'https://viqrgaeirmmvyicztido.supabase.co';
+
+const SUPABASE_KEY =
+'sb_publishable_o5D1Vr1dmYnbpHoeM3epEg_qr9gGjlC';
+
+
+/* =====================================================
+   ELEMENTOS
+   ===================================================== */
+
+const loginCard =
+document.getElementById('loginCard');
+
+const adminPanel =
+document.getElementById('adminPanel');
+
+const emailInput =
+document.getElementById('email');
+
+const passwordInput =
+document.getElementById('password');
+
+const loginBtn =
+document.getElementById('loginBtn');
+
+const logoutBtn =
+document.getElementById('logoutBtn');
+
+const loginStatus =
+document.getElementById('loginStatus');
+
+const adminStatus =
+document.getElementById('adminStatus');
+
+const dateFilter =
+document.getElementById('dateFilter');
+
+const barberFilter =
+document.getElementById('barberFilter');
+
+const refreshBtn =
+document.getElementById('refreshBtn');
+
+const reservationsList =
+document.getElementById('reservationsList');
+
+
+/* =====================================================
+   DATA
+   ===================================================== */
+
+function getToday(){
+
+const now =
+new Date();
+
+return `${now.getFullYear()}-${
+String(now.getMonth()+1).padStart(2,'0')
+}-${
+String(now.getDate()).padStart(2,'0')
+}`;
+
+}
+
+dateFilter.value =
+getToday();
+
+
+/* =====================================================
+   SUPABASE REQUEST
+   ===================================================== */
+
+async function supabaseRequest(
+path,
+options={}
+){
+
+const response =
+await fetch(
+`${SUPABASE_URL}/rest/v1/${path}`,
+{
+
+...options,
+
+headers:{
+
+'apikey':
+SUPABASE_KEY,
+
+'Authorization':
+`Bearer ${SUPABASE_KEY}`,
+
+'Content-Type':
+'application/json',
+
+...(options.headers || {})
+
+}
+
+}
+);
+
+
+const text =
+await response.text();
+
+
+if(!response.ok){
+
+throw new Error(
+text ||
+`HTTP ${response.status}`
+);
+
+}
+
+
+if(!text.trim()){
+
+return null;
+
+}
+
+
+try{
+
+return JSON.parse(text);
+
+}
+catch{
+
+return text;
+
+}
+
+}
+
+
+/* =====================================================
+   STATUS
+   ===================================================== */
+
+function showStatus(
+element,
+message,
+error=false
+){
+
+element.style.display =
+'block';
+
+element.textContent =
+message;
+
+element.className =
+error
+? 'status error'
+: 'status success';
+
+}
+
+
+/* =====================================================
+   LOGIN
+   ===================================================== */
+
+loginBtn.addEventListener(
+'click',
+async()=>{
+
+const email =
+emailInput.value.trim();
+
+const password =
+passwordInput.value;
+
+
+if(!email || !password){
+
+showStatus(
+loginStatus,
+'Digite email e senha.',
+true
+);
+
+return;
+
+}
+
+
+loginBtn.disabled=true;
+
+loginBtn.textContent=
+'Entrando...';
+
+
+try{
+
+const response =
+await fetch(
+`${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+{
+
+method:'POST',
+
+headers:{
+
+'apikey':
+SUPABASE_KEY,
+
+'Content-Type':
+'application/json'
+
+},
+
+body:
+JSON.stringify({
+
+email:email,
+
+password:password
+
+})
+
+}
+);
+
+
+const data =
+await response.json();
+
+
+if(!response.ok){
+
+throw new Error(
+data.error_description ||
+data.msg ||
+'Login inválido.'
+);
+
+}
+
+
+localStorage.setItem(
+'almeida_access_token',
+data.access_token
+);
+
+
+localStorage.setItem(
+'almeida_refresh_token',
+data.refresh_token
+);
+
+
+loginCard.classList.add(
+'hidden'
+);
+
+adminPanel.classList.remove(
+'hidden'
+);
+
+
+await loadReservations();
+
+
+}
+catch(error){
+
+console.error(error);
+
+showStatus(
+loginStatus,
+error.message ||
+'Não foi possível entrar.',
+true
+);
+
+}
+finally{
+
+loginBtn.disabled=false;
+
+loginBtn.textContent=
+'Entrar';
+
+}
+
+}
+);
+
+
+/* =====================================================
+   CARREGAR RESERVAS
+   ===================================================== */
+
+async function loadReservations(){
+
+const token =
+localStorage.getItem(
+'almeida_access_token'
+);
+
+
+if(!token){
+
+return;
+
+}
+
+
+const date =
+dateFilter.value;
+
+const barber =
+barberFilter.value.trim();
+
+
+try{
+
+const reservations =
+await supabaseRequest(
+'reservations' +
+'?select=id,name,phone,service,barber,reservation_date,reservation_time' +
+'&reservation_date=eq.' +
+encodeURIComponent(date) +
+'&barber=eq.' +
+encodeURIComponent(barber) +
+'&order=reservation_time.asc',
+{
+
+headers:{
+
+'Authorization':
+`Bearer ${token}`
+
+}
+
+}
+);
+
+
+renderReservations(
+reservations || []
+);
+
+
+}
+catch(error){
+
+console.error(error);
+
+showStatus(
+adminStatus,
+'Não foi possível carregar os agendamentos.',
+true
+);
+
+}
+
+}
+
+
+/* =====================================================
+   MOSTRAR RESERVAS
+   ===================================================== */
+
+function renderReservations(
+reservations
+){
+
+reservationsList.innerHTML='';
+
+
+if(!reservations.length){
+
+reservationsList.innerHTML=
+'<p style="color:#888">Nenhum agendamento nesta data.</p>';
+
+return;
+
+}
+
+
+reservations.forEach(
+reservation=>{
+
+const div =
+document.createElement('div');
+
+div.className =
+'reservation';
+
+
+const info =
+document.createElement('div');
+
+info.innerHTML=`
+
+<strong>
+${escapeHtml(reservation.reservation_time)}
+—
+${escapeHtml(reservation.name)}
+</strong>
+
+<div class="small">
+Telefone:
+${escapeHtml(reservation.phone)}
+</div>
+
+<div class="small">
+Serviço:
+${escapeHtml(reservation.service || '')}
+</div>
+
+<div class="small">
+Barbeiro:
+${escapeHtml(reservation.barber || '')}
+</div>
+
+`;
+
+
+const cancelBtn =
+document.createElement('button');
+
+cancelBtn.className =
+'cancel';
+
+cancelBtn.textContent =
+'Cancelar';
+
+
+cancelBtn.addEventListener(
+'click',
+()=>cancelReservation(
+reservation.id
+)
+);
+
+
+div.appendChild(info);
+
+div.appendChild(cancelBtn);
+
+reservationsList.appendChild(div);
+
+}
+);
+
+}
+
+
+/* =====================================================
+   CANCELAR
+   ===================================================== */
+
+async function cancelReservation(
+id
+){
+
+if(
+!confirm(
+'Tem certeza que deseja cancelar este agendamento?'
+)
+){
+
+return;
+
+}
+
+
+const token =
+localStorage.getItem(
+'almeida_access_token'
+);
+
+
+try{
+
+await supabaseRequest(
+'reservations?id=eq.' +
+encodeURIComponent(id),
+{
+
+method:'DELETE',
+
+headers:{
+
+'Authorization':
+`Bearer ${token}`,
+
+'Prefer':
+'return=minimal'
+
+}
+
+}
+);
+
+
+showStatus(
+adminStatus,
+'Agendamento cancelado.'
+);
+
+
+await loadReservations();
+
+
+}
+catch(error){
+
+console.error(error);
+
+showStatus(
+adminStatus,
+'Não foi possível cancelar o agendamento.',
+true
+);
+
+}
+
+}
+
+
+/* =====================================================
+   LOGOUT
+   ===================================================== */
+
+logoutBtn.addEventListener(
+'click',
+()=>{
+
+localStorage.removeItem(
+'almeida_access_token'
+);
+
+localStorage.removeItem(
+'almeida_refresh_token'
+);
+
+adminPanel.classList.add(
+'hidden'
+);
+
+loginCard.classList.remove(
+'hidden'
+);
+
+}
+);
+
+
+/* =====================================================
+   FILTROS
+   ===================================================== */
+
+dateFilter.addEventListener(
+'change',
+loadReservations
+);
+
+barberFilter.addEventListener(
+'change',
+loadReservations
+);
+
+refreshBtn.addEventListener(
+'click',
+loadReservations
+);
+
+
+/* =====================================================
+   ESCAPAR HTML
+   ===================================================== */
+
+function escapeHtml(text){
+
+return String(text)
+.replace(
+/[&<>"']/g,
+character=>({
+
+'&':'&amp;',
+'<':'&lt;',
+'>':'&gt;',
+'"':'&quot;',
+"'":'&#039;'
+
+}[character])
+);
+
+}
+
+
+/* =====================================================
+   VERIFICAR LOGIN SALVO
+   ===================================================== */
+
+if(
+localStorage.getItem(
+'almeida_access_token'
+)
+){
+
+loginCard.classList.add(
+'hidden'
+);
+
+adminPanel.classList.remove(
+'hidden'
+);
+
+loadReservations();
+
+}
+
+</script>
+
+</body>
+</html>
