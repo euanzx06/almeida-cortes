@@ -175,7 +175,58 @@ footer{
   }
 
 }
+.contacts{
+  max-width:1050px;
+  margin:25px auto;
+  padding:24px;
+  text-align:center;
+  background:#1d1d1d;
+  border:1px solid #333;
+  border-radius:16px;
+}
 
+.contacts h2{
+  margin-bottom:8px;
+}
+
+.contacts p{
+  color:#aaa;
+  margin-top:0;
+}
+
+.contact-buttons{
+  display:flex;
+  justify-content:center;
+  gap:15px;
+  margin-top:20px;
+  flex-wrap:wrap;
+}
+
+.contact-btn{
+  display:inline-block;
+  min-width:180px;
+  padding:14px 20px;
+  border-radius:10px;
+  text-decoration:none;
+  font-weight:bold;
+  transition:transform .2s,filter .2s;
+}
+
+.contact-btn:hover{
+  transform:translateY(-2px);
+  filter:brightness(1.1);
+}
+
+.whatsapp{
+  background:#25D366;
+  color:#fff;
+}
+
+.instagram{
+  background:#d7ad52;
+  color:#111;
+}
+  
 </style>
 
 </head>
@@ -349,7 +400,37 @@ Os horários em vermelho já estão ocupados.
 <footer>
 
 Almeida Cortes • Atendimento das 09:00 às 23:00
+<!-- CONTATOS -->
 
+<div class="contacts">
+
+  <h2>Fale com a Almeida Cortes</h2>
+
+  <p>Entre em contato ou acompanhe nosso trabalho:</p>
+
+  <div class="contact-buttons">
+
+    <a
+      class="contact-btn whatsapp"
+      href="https://wa.me/5515998130978"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      💬 WhatsApp
+    </a>
+
+    <a
+      class="contact-btn instagram"
+      href="https://www.instagram.com/aalmeida_corts/"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      📷 Instagram
+    </a>
+
+  </div>
+
+</div>
 </footer>
 
 
