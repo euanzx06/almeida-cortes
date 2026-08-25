@@ -576,13 +576,13 @@ try{
 
 reservations =
 await supabaseRequest(
-'reservations' +
-'?select=id,reservation_date,reservation_time,barber' +
-'&reservation_date=eq.' +
-encodeURIComponent(date) +
-'&barber=eq.' +
-encodeURIComponent(barber) +
-'&order=reservation_time.asc'
+  'public_reservation_times' +
+  '?select=reservation_date,reservation_time,barber' +
+  '&reservation_date=eq.' +
+  encodeURIComponent(date) +
+  '&barber=eq.' +
+  encodeURIComponent(barber) +
+  '&order=reservation_time.asc'
 );
 
 
