@@ -495,6 +495,19 @@ footer{
   }
 }
 
+
+.gallery-grid img{
+  display:block;
+  min-width:0;
+}
+
+@media(max-width:700px){
+  .gallery-grid img{
+    width:100%;
+    height:180px;
+  }
+}
+
 </style>
 
 </head>
@@ -691,8 +704,18 @@ Os horários em vermelho já estão ocupados.
   <p>Confira alguns cortes feitos na Almeida Cortes</p>
 
   <div class="gallery-grid">
+    <img src="corte-1.jpg" alt="Corte realizado na Almeida Cortes" loading="lazy" onclick="openLightbox(this.src)">
+    <img src="corte-2.jpg" alt="Corte realizado na Almeida Cortes" loading="lazy" onclick="openLightbox(this.src)">
+    <img src="corte-3.jpg" alt="Corte realizado na Almeida Cortes" loading="lazy" onclick="openLightbox(this.src)">
+    <img src="corte-4.jpg" alt="Corte realizado na Almeida Cortes" loading="lazy" onclick="openLightbox(this.src)">
+    <img src="corte-5.jpg" alt="Corte realizado na Almeida Cortes" loading="lazy" onclick="openLightbox(this.src)">
+  </div>
 
-    <img src="logo.png" alt="Logo Almeida Cortes" class="logo-watermark">
+</div>
+
+<div class="contacts">
+
+  <img src="logo.png" alt="Logo Almeida Cortes" class="logo-watermark">
 
   <h2>Fale com a Almeida Cortes</h2>
 
@@ -730,6 +753,11 @@ Os horários em vermelho já estão ocupados.
 </div>
 </footer>
 
+
+
+<div id="lightbox" class="lightbox" onclick="closeLightbox()">
+  <img id="lightboxImg" src="" alt="Foto ampliada do corte">
+</div>
 
 <script>
 
