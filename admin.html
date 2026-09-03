@@ -226,6 +226,131 @@ button:disabled{
   display:none;
 }
 
+/* =====================================================
+   NOTIFICAÇÕES
+   ===================================================== */
+
+.notif-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:20px;
+}
+
+.notif-bell-wrap{
+  position:relative;
+  display:inline-flex;
+}
+
+.notif-bell{
+  background:#161513;
+  border:2px solid #c9a227;
+  border-radius:2px;
+  padding:10px 14px;
+  box-shadow:4px 4px 0 #000;
+  font-size:18px;
+  color:#f0ece1;
+  cursor:pointer;
+}
+
+.notif-bell.ringing{
+  animation:notifShake .5s ease-in-out 0s 3;
+}
+
+@keyframes notifShake{
+  0%,100%{ transform:rotate(0deg); }
+  25%{ transform:rotate(-15deg); }
+  75%{ transform:rotate(15deg); }
+}
+
+.notif-badge{
+  position:absolute;
+  top:-8px;
+  right:-8px;
+  background:#c81d25;
+  color:#f0ece1;
+  border:2px solid #000;
+  border-radius:2px;
+  min-width:20px;
+  height:20px;
+  padding:0 4px;
+  font-size:11px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:2px 2px 0 #000;
+}
+
+.sound-toggle{
+  background:#3a372f;
+  color:#f0ece1;
+  border:2px solid #000;
+  border-radius:2px;
+  padding:10px 14px;
+  box-shadow:4px 4px 0 #000;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.toast-container{
+  position:fixed;
+  top:20px;
+  right:20px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  max-width:340px;
+}
+
+.toast{
+  background:#161513;
+  border:2px solid #000;
+  border-left:6px solid #c81d25;
+  border-radius:2px;
+  padding:16px 18px;
+  box-shadow:7px 7px 0 rgba(0,0,0,.55);
+  transform:translateX(120%);
+  transition:transform .35s ease;
+  cursor:pointer;
+}
+
+.toast.show{
+  transform:translateX(0);
+}
+
+.toast-title{
+  font-family:Impact,'Arial Black',Arial,sans-serif;
+  font-weight:400;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  color:#c9a227;
+  font-size:15px;
+  margin:0 0 6px;
+  -webkit-text-stroke:.4px #000;
+}
+
+.toast-body{
+  color:#f0ece1;
+  font-size:13px;
+  line-height:1.4;
+}
+
+.toast-body strong{
+  color:#f0ece1;
+}
+
+@media(max-width:700px){
+  .toast-container{
+    left:14px;
+    right:14px;
+    top:14px;
+    max-width:none;
+  }
+}
+
 @media(max-width:700px){
 
   .filters{
@@ -289,6 +414,36 @@ Entrar
 <!-- PAINEL -->
 
 <div id="adminPanel" class="hidden">
+
+<div class="notif-bar">
+
+<div class="notif-bell-wrap">
+
+<button
+id="notifBell"
+class="notif-bell"
+title="Notificações de novos agendamentos"
+>
+🔔
+<span
+id="notifBadge"
+class="notif-badge hidden"
+>0</span>
+</button>
+
+</div>
+
+
+<button
+id="soundToggle"
+class="sound-toggle"
+title="Ativar/desativar som de notificação"
+>
+🔊
+</button>
+
+</div>
+
 
 <div class="card">
 
@@ -367,6 +522,12 @@ class="status"
 </div>
 
 
+<div
+id="toastContainer"
+class="toast-container"
+></div>
+
+
 <script>
 
 /* =====================================================
@@ -419,6 +580,18 @@ document.getElementById('refreshBtn');
 
 const reservationsList =
 document.getElementById('reservationsList');
+
+const notifBell =
+document.getElementById('notifBell');
+
+const notifBadge =
+document.getElementById('notifBadge');
+
+const soundToggle =
+document.getElementById('soundToggle');
+
+const toastContainer =
+document.getElementById('toastContainer');
 
 
 /* =====================================================
@@ -639,6 +812,8 @@ adminPanel.classList.remove(
 
 
 await loadReservations();
+
+startNotifPolling();
 
 
 }
@@ -925,6 +1100,8 @@ loginCard.classList.remove(
 'hidden'
 );
 
+stopNotifPolling();
+
 }
 );
 
@@ -973,6 +1150,369 @@ character=>({
 
 
 /* =====================================================
+   NOTIFICAÇÕES EM TELA
+   ===================================================== */
+
+let notifKnownIds = new Set();
+
+let notifInitialized = false;
+
+let notifUnreadCount = 0;
+
+let notifPollTimer = null;
+
+let notifSoundEnabled =
+localStorage.getItem('almeida_sound_enabled') !== 'false';
+
+
+function updateSoundIcon(){
+
+soundToggle.textContent =
+notifSoundEnabled ? '🔊' : '🔇';
+
+}
+
+updateSoundIcon();
+
+
+soundToggle.addEventListener(
+'click',
+()=>{
+
+notifSoundEnabled = !notifSoundEnabled;
+
+localStorage.setItem(
+'almeida_sound_enabled',
+notifSoundEnabled ? 'true' : 'false'
+);
+
+updateSoundIcon();
+
+}
+);
+
+
+function playNotifSound(){
+
+if(!notifSoundEnabled){
+
+return;
+
+}
+
+try{
+
+const AudioCtx =
+window.AudioContext ||
+window.webkitAudioContext;
+
+const ctx = new AudioCtx();
+
+const beep = (start, freq) => {
+
+const osc = ctx.createOscillator();
+
+const gain = ctx.createGain();
+
+osc.type = 'sine';
+
+osc.frequency.value = freq;
+
+gain.gain.setValueAtTime(
+0.0001,
+ctx.currentTime + start
+);
+
+gain.gain.exponentialRampToValueAtTime(
+0.2,
+ctx.currentTime + start + 0.02
+);
+
+gain.gain.exponentialRampToValueAtTime(
+0.0001,
+ctx.currentTime + start + 0.22
+);
+
+osc.connect(gain);
+
+gain.connect(ctx.destination);
+
+osc.start(ctx.currentTime + start);
+
+osc.stop(ctx.currentTime + start + 0.25);
+
+};
+
+beep(0, 880);
+
+beep(0.25, 1175);
+
+}
+catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+function updateNotifBadge(){
+
+if(notifUnreadCount > 0){
+
+notifBadge.textContent =
+notifUnreadCount > 99 ? '99+' : String(notifUnreadCount);
+
+notifBadge.classList.remove('hidden');
+
+}
+else{
+
+notifBadge.classList.add('hidden');
+
+}
+
+}
+
+
+function ringBell(){
+
+notifBell.classList.add('ringing');
+
+setTimeout(
+()=>{
+
+notifBell.classList.remove('ringing');
+
+},
+1600
+);
+
+}
+
+
+notifBell.addEventListener(
+'click',
+()=>{
+
+notifUnreadCount = 0;
+
+updateNotifBadge();
+
+loadReservations();
+
+}
+);
+
+
+function showToast(reservation){
+
+const toast =
+document.createElement('div');
+
+toast.className = 'toast';
+
+toast.innerHTML = `
+
+<p class="toast-title">
+🔔 Novo agendamento!
+</p>
+
+<div class="toast-body">
+
+<strong>
+${escapeHtml(reservation.name || '')}
+</strong>
+<br>
+${escapeHtml(reservation.reservation_date || '')}
+às
+${escapeHtml(reservation.reservation_time || '')}
+<br>
+${escapeHtml(reservation.barber || '')}
+${
+reservation.service
+? ' — ' + escapeHtml(reservation.service)
+: ''
+}
+
+</div>
+
+`;
+
+toast.addEventListener(
+'click',
+()=>{
+
+toast.classList.remove('show');
+
+setTimeout(
+()=>toast.remove(),
+350
+);
+
+}
+);
+
+toastContainer.appendChild(toast);
+
+requestAnimationFrame(
+()=>{
+
+toast.classList.add('show');
+
+}
+);
+
+setTimeout(
+()=>{
+
+toast.classList.remove('show');
+
+setTimeout(
+()=>toast.remove(),
+350
+);
+
+},
+7000
+);
+
+}
+
+
+async function checkNewReservations(){
+
+const token =
+localStorage.getItem(
+'almeida_access_token'
+);
+
+if(!token){
+
+return;
+
+}
+
+try{
+
+const reservations =
+await supabaseRequest(
+'reservations' +
+'?select=id,name,phone,service,barber,reservation_date,reservation_time' +
+'&order=id.desc' +
+'&limit=15',
+{
+
+headers:{
+
+'Authorization':
+`Bearer ${token}`
+
+}
+
+}
+);
+
+if(!reservations){
+
+return;
+
+}
+
+const newOnes = [];
+
+reservations.forEach(
+reservation=>{
+
+if(!notifKnownIds.has(reservation.id)){
+
+notifKnownIds.add(reservation.id);
+
+if(notifInitialized){
+
+newOnes.push(reservation);
+
+}
+
+}
+
+}
+);
+
+if(notifInitialized && newOnes.length){
+
+newOnes.reverse().forEach(
+reservation=>{
+
+showToast(reservation);
+
+notifUnreadCount++;
+
+}
+);
+
+updateNotifBadge();
+
+ringBell();
+
+playNotifSound();
+
+}
+
+notifInitialized = true;
+
+}
+catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+function startNotifPolling(){
+
+checkNewReservations();
+
+if(notifPollTimer){
+
+clearInterval(notifPollTimer);
+
+}
+
+notifPollTimer =
+setInterval(
+checkNewReservations,
+20000
+);
+
+}
+
+
+function stopNotifPolling(){
+
+if(notifPollTimer){
+
+clearInterval(notifPollTimer);
+
+notifPollTimer = null;
+
+}
+
+notifKnownIds = new Set();
+
+notifInitialized = false;
+
+notifUnreadCount = 0;
+
+updateNotifBadge();
+
+}
+
+
+/* =====================================================
    VERIFICAR LOGIN SALVO
    ===================================================== */
 
@@ -991,6 +1531,8 @@ adminPanel.classList.remove(
 );
 
 loadReservations();
+
+startNotifPolling();
 
 }
 
