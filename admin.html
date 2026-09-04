@@ -236,6 +236,7 @@ button:disabled{
   justify-content:space-between;
   gap:10px;
   margin-bottom:20px;
+  flex-wrap:wrap;
 }
 
 .notif-bell-wrap{
@@ -442,6 +443,15 @@ title="Ativar/desativar som de notificação"
 🔊
 </button>
 
+
+<button
+id="pushToggle"
+class="sound-toggle"
+title="Ativar notificações do sistema (funciona com a aba em segundo plano ou o navegador fechado)"
+>
+📲 Ativar notificações do sistema
+</button>
+
 </div>
 
 
@@ -590,8 +600,15 @@ document.getElementById('notifBadge');
 const soundToggle =
 document.getElementById('soundToggle');
 
+const pushToggle =
+document.getElementById('pushToggle');
+
 const toastContainer =
 document.getElementById('toastContainer');
+
+
+const VAPID_PUBLIC_KEY =
+'BPDV6tSsc8Ag3hO1h-MqcLhRg4-fSMvCYvxtL0WUWqrj4TKa2Hhi_S0KNQqrR-pB8__qG_YktcGr2Hevy4FwhQo';
 
 
 /* =====================================================
@@ -1192,6 +1209,281 @@ updateSoundIcon();
 );
 
 
+/* =====================================================
+   NOTIFICAÇÕES DO SISTEMA (DESKTOP + PUSH)
+   ===================================================== */
+
+function urlBase64ToUint8Array(base64String){
+
+const padding =
+'='.repeat((4 - base64String.length % 4) % 4);
+
+const base64 =
+(base64String + padding)
+.replace(/-/g, '+')
+.replace(/_/g, '/');
+
+const rawData = atob(base64);
+
+const outputArray = new Uint8Array(rawData.length);
+
+for(let i = 0; i < rawData.length; i++){
+
+outputArray[i] = rawData.charCodeAt(i);
+
+}
+
+return outputArray;
+
+}
+
+
+function updatePushButton(){
+
+if(!('Notification' in window)){
+
+pushToggle.textContent =
+'📲 Notificações não suportadas';
+
+pushToggle.disabled = true;
+
+return;
+
+}
+
+if(Notification.permission === 'granted'){
+
+pushToggle.textContent =
+'✅ Notificações do sistema ativas';
+
+}
+else if(Notification.permission === 'denied'){
+
+pushToggle.textContent =
+'🚫 Notificações bloqueadas no navegador';
+
+}
+else{
+
+pushToggle.textContent =
+'📲 Ativar notificações do sistema';
+
+}
+
+}
+
+updatePushButton();
+
+
+function showSystemNotification(reservation){
+
+if(
+!('Notification' in window) ||
+Notification.permission !== 'granted'
+){
+
+return;
+
+}
+
+try{
+
+const title = 'Novo agendamento! - Almeida Cortes';
+
+const body =
+`${reservation.name || ''} — ` +
+`${reservation.reservation_date || ''} às ` +
+`${reservation.reservation_time || ''}`;
+
+if(
+navigator.serviceWorker &&
+navigator.serviceWorker.controller
+){
+
+navigator.serviceWorker.ready.then(
+registration=>{
+
+registration.showNotification(
+title,
+{ body }
+);
+
+}
+);
+
+}
+else{
+
+new Notification(title, { body });
+
+}
+
+}
+catch(error){
+
+console.error(error);
+
+}
+
+}
+
+
+async function savePushSubscription(subscription){
+
+const token =
+localStorage.getItem(
+'almeida_access_token'
+);
+
+if(!token){
+
+return;
+
+}
+
+const json = subscription.toJSON();
+
+await supabaseRequest(
+'push_subscriptions',
+{
+
+method:'POST',
+
+headers:{
+
+'Authorization':
+`Bearer ${token}`,
+
+'Prefer':
+'resolution=merge-duplicates,return=minimal'
+
+},
+
+body:JSON.stringify({
+
+endpoint:json.endpoint,
+p256dh:json.keys.p256dh,
+auth:json.keys.auth
+
+})
+
+}
+);
+
+}
+
+
+async function enableSystemNotifications(silent){
+
+if(!('Notification' in window)){
+
+return;
+
+}
+
+if(Notification.permission === 'denied'){
+
+if(!silent){
+
+showStatus(
+adminStatus,
+'As notificações estão bloqueadas nas configurações do navegador. Libere o site nas permissões do navegador para ativar.',
+true
+);
+
+}
+
+return;
+
+}
+
+const permission =
+await Notification.requestPermission();
+
+updatePushButton();
+
+if(permission !== 'granted'){
+
+return;
+
+}
+
+if(
+!('serviceWorker' in navigator) ||
+!('PushManager' in window)
+){
+
+if(!silent){
+
+showStatus(
+adminStatus,
+'Notificações do sistema ativadas para esta aba. Este navegador não suporta notificação com o navegador totalmente fechado.'
+);
+
+}
+
+return;
+
+}
+
+try{
+
+const registration =
+await navigator.serviceWorker.register('sw.js');
+
+const existingSubscription =
+await registration.pushManager.getSubscription();
+
+const subscription =
+existingSubscription ||
+await registration.pushManager.subscribe({
+
+userVisibleOnly:true,
+
+applicationServerKey:
+urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+
+});
+
+await savePushSubscription(subscription);
+
+if(!silent){
+
+showStatus(
+adminStatus,
+'Notificações do sistema ativadas, inclusive com o navegador fechado.'
+);
+
+}
+
+}
+catch(error){
+
+console.error(error);
+
+if(!silent){
+
+showStatus(
+adminStatus,
+'Notificações ativadas nesta aba, mas não foi possível ativar com o navegador fechado (' +
+(error.message || error) +
+').',
+true
+);
+
+}
+
+}
+
+}
+
+
+pushToggle.addEventListener(
+'click',
+()=>enableSystemNotifications(false)
+);
+
+
 function playNotifSound(){
 
 if(!notifSoundEnabled){
@@ -1447,6 +1739,8 @@ reservation=>{
 
 showToast(reservation);
 
+showSystemNotification(reservation);
+
 notifUnreadCount++;
 
 }
@@ -1477,6 +1771,15 @@ console.error(error);
 function startNotifPolling(){
 
 checkNewReservations();
+
+if(
+'Notification' in window &&
+Notification.permission === 'granted'
+){
+
+enableSystemNotifications(true);
+
+}
 
 if(notifPollTimer){
 
