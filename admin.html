@@ -863,6 +863,8 @@ adminPanel.classList.remove(
 
 await loadReservations();
 
+requestNotificationPermission();
+
 
 }
 catch(error){
@@ -1214,6 +1216,7 @@ adminPanel.classList.remove(
 );
 
 loadReservations();
+requestNotificationPermission();
 
 }
 
@@ -1230,6 +1233,75 @@ document.getElementById('bellCount');
 
 let seenReservationIds = null;
 let unseenCount = 0;
+
+/* =====================================================
+   NOTIFICAÇÃO DO NAVEGADOR (funciona minimizado/outra aba)
+   ===================================================== */
+
+function requestNotificationPermission(){
+
+if(!('Notification' in window)){
+
+return;
+
+}
+
+if(
+Notification.permission !== 'granted' &&
+Notification.permission !== 'denied'
+){
+
+Notification.requestPermission();
+
+}
+
+}
+
+function showBrowserNotification(reservation){
+
+if(!('Notification' in window)){
+
+return;
+
+}
+
+if(Notification.permission !== 'granted'){
+
+return;
+
+}
+
+try{
+
+const notification =
+new Notification('✂️ Novo agendamento — Almeida Cortes', {
+
+body:
+`${reservation.reservation_time} — ${reservation.name}\n${reservation.service || ''}`,
+
+tag:
+'agendamento-' + reservation.id,
+
+requireInteraction:
+false
+
+});
+
+notification.onclick = ()=>{
+
+window.focus();
+notification.close();
+
+};
+
+}
+catch(error){
+
+console.warn('Não foi possível mostrar notificação do navegador:', error);
+
+}
+
+}
 
 function playBeep(){
 
@@ -1365,6 +1437,7 @@ newOnes.forEach(reservation => {
 
 seenReservationIds.add(reservation.id);
 showToast(reservation);
+showBrowserNotification(reservation);
 
 });
 
